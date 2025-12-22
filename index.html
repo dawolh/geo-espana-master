@@ -32,16 +32,6 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
-        .pulse-target {
-            animation: pulse-blue 2s infinite;
-        }
-
-        @keyframes pulse-blue {
-            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-        }
-
         .sidebar-transition {
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -63,8 +53,8 @@
 
         <div id="quiz-ui" class="hidden flex items-center gap-3 animate-in fade-in zoom-in duration-300">
             <div class="glass px-6 py-2 rounded-2xl border-2 border-blue-500 shadow-xl shadow-blue-100 flex flex-col items-center min-w-[180px]">
-                <span class="text-[9px] font-bold text-blue-500 uppercase tracking-widest">Encuentra:</span>
-                <span id="target-name" class="text-xl font-black text-slate-800 uppercase leading-none">---</span>
+                <span class="text-[9px] font-bold text-blue-500 uppercase tracking-widest">Busca:</span>
+                <span id="target-name" class="text-xl font-black text-slate-800 uppercase leading-none text-center">---</span>
             </div>
         </div>
 
@@ -81,7 +71,7 @@
         <aside id="sidebar" class="sidebar-transition absolute left-4 top-4 bottom-4 w-72 z-[1000] flex flex-col gap-4 pointer-events-none">
             <div class="glass p-5 rounded-3xl pointer-events-auto flex flex-col gap-6 shadow-2xl overflow-y-auto">
                 <section>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 block">Experiencia</label>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 block">Modo de Juego</label>
                     <div class="grid grid-cols-2 gap-2">
                         <button onclick="setMode('explorar')" id="mode-explorar" class="p-3 rounded-2xl font-bold text-sm transition-all border-2 flex flex-col items-center gap-1 bg-blue-600 text-white border-blue-600">
                             <span class="text-xl">🔍</span> Explorar
@@ -93,20 +83,20 @@
                 </section>
 
                 <section>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 block">Contenido</label>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 block">Categorías</label>
                     <div class="flex flex-col gap-2">
                         <button onclick="setCategory('provincias')" id="cat-provincias" class="flex items-center gap-3 p-3.5 rounded-2xl bg-blue-50 border-2 border-blue-500 transition-all group">
                             <span class="text-2xl group-hover:scale-110 transition-transform">🏛️</span>
                             <div class="text-left">
                                 <p class="font-bold text-blue-900 text-sm leading-none">Provincias</p>
-                                <p class="text-[9px] text-blue-500 font-bold mt-1 uppercase">Mapa Político</p>
+                                <p class="text-[9px] text-blue-500 font-bold mt-1 uppercase">Mapa Político (50+)</p>
                             </div>
                         </button>
                         <button onclick="setCategory('rios')" id="cat-rios" class="flex items-center gap-3 p-3.5 rounded-2xl bg-white border-2 border-slate-100 transition-all group">
                             <span class="text-2xl group-hover:scale-110 transition-transform">🌊</span>
                             <div class="text-left">
                                 <p class="font-bold text-slate-600 text-sm leading-none">Hidrografía</p>
-                                <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase">Ríos y Vertientes</p>
+                                <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase">Principales Ríos</p>
                             </div>
                         </button>
                         <button onclick="setCategory('montanas')" id="cat-montanas" class="flex items-center gap-3 p-3.5 rounded-2xl bg-white border-2 border-slate-100 transition-all group">
@@ -121,7 +111,7 @@
 
                 <div class="mt-auto p-4 bg-blue-50 rounded-2xl border border-blue-100">
                     <p id="hint-box" class="text-[11px] text-blue-800 font-semibold leading-relaxed">
-                        💡 <b>Modo Explorar:</b> Haz clic en los puntos para conocer datos sobre la geografía española.
+                        💡 Haz clic en los puntos para conocer datos sobre la geografía española.
                     </p>
                 </div>
             </div>
@@ -141,11 +131,10 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Datos extendidos
         const geoData = {
             provincias: [
                 { name: "Álava", cap: "Vitoria", com: "País Vasco", lat: 42.84, lng: -2.67 },
-                { name: "Albacete", cap: "Albacete", com: "C-La Mancha", lat: 38.99, lng: -1.85 },
+                { name: "Albacete", cap: "Albacete", com: "Castilla-La Mancha", lat: 38.99, lng: -1.85 },
                 { name: "Alicante", cap: "Alicante", com: "C. Valenciana", lat: 38.34, lng: -0.48 },
                 { name: "Almería", cap: "Almería", com: "Andalucía", lat: 36.83, lng: -2.46 },
                 { name: "Asturias", cap: "Oviedo", com: "Asturias", lat: 43.36, lng: -5.85 },
@@ -158,12 +147,12 @@
                 { name: "Cádiz", cap: "Cádiz", com: "Andalucía", lat: 36.52, lng: -6.28 },
                 { name: "Cantabria", cap: "Santander", com: "Cantabria", lat: 43.46, lng: -3.80 },
                 { name: "Castellón", cap: "Castellón", com: "C. Valenciana", lat: 39.98, lng: -0.05 },
-                { name: "Ciudad Real", cap: "Ciudad Real", com: "C-La Mancha", lat: 38.98, lng: -3.92 },
+                { name: "Ciudad Real", cap: "Ciudad Real", com: "Castilla-La Mancha", lat: 38.98, lng: -3.92 },
                 { name: "Córdoba", cap: "Córdoba", com: "Andalucía", lat: 37.88, lng: -4.77 },
-                { name: "Cuenca", cap: "Cuenca", com: "C-La Mancha", lat: 40.07, lng: -2.13 },
+                { name: "Cuenca", cap: "Cuenca", com: "Castilla-La Mancha", lat: 40.07, lng: -2.13 },
                 { name: "Girona", cap: "Girona", com: "Cataluña", lat: 41.97, lng: 2.82 },
                 { name: "Granada", cap: "Granada", com: "Andalucía", lat: 37.17, lng: -3.59 },
-                { name: "Guadalajara", cap: "Guadalajara", com: "C-La Mancha", lat: 40.63, lng: -3.16 },
+                { name: "Guadalajara", cap: "Guadalajara", com: "Castilla-La Mancha", lat: 40.63, lng: -3.16 },
                 { name: "Guipúzcoa", cap: "San Sebastián", com: "País Vasco", lat: 43.31, lng: -1.98 },
                 { name: "Huelva", cap: "Huelva", com: "Andalucía", lat: 37.26, lng: -6.94 },
                 { name: "Huesca", cap: "Huesca", com: "Aragón", lat: 42.13, lng: -0.40 },
@@ -187,7 +176,7 @@
                 { name: "Soria", cap: "Soria", com: "Castilla y León", lat: 41.76, lng: -2.47 },
                 { name: "Tarragona", cap: "Tarragona", com: "Cataluña", lat: 41.11, lng: 1.24 },
                 { name: "Teruel", cap: "Teruel", com: "Aragón", lat: 40.34, lng: -1.10 },
-                { name: "Toledo", cap: "Toledo", com: "C-La Mancha", lat: 39.86, lng: -4.02 },
+                { name: "Toledo", cap: "Toledo", com: "Castilla-La Mancha", lat: 39.86, lng: -4.02 },
                 { name: "Valencia", cap: "Valencia", com: "C. Valenciana", lat: 39.46, lng: -0.37 },
                 { name: "Valladolid", cap: "Valladolid", com: "Castilla y León", lat: 41.65, lng: -4.72 },
                 { name: "Vizcaya", cap: "Bilbao", com: "País Vasco", lat: 43.26, lng: -2.93 },
@@ -207,15 +196,15 @@
                 { name: "Júcar", desc: "Vertiente Mediterránea", coords: [[40.2, -1.9], [39.2, -0.2]] }
             ],
             montanas: [
-                { name: "Pirineos", info: "Frontera natural con Francia (Aneto)", lat: 42.6, lng: 0.8 },
-                { name: "Sierra Nevada", info: "Pico más alto peninsular (Mulhacén)", lat: 37.05, lng: -3.3 },
+                { name: "Pirineos", info: "Frontera con Francia (Aneto)", lat: 42.6, lng: 0.8 },
+                { name: "Sierra Nevada", info: "Pico Mulhacén", lat: 37.05, lng: -3.3 },
                 { name: "Cordillera Cantábrica", info: "Norte de España (Picos de Europa)", lat: 43.1, lng: -4.8 },
-                { name: "Sistema Central", info: "Divide la Meseta (Almanzor)", lat: 40.3, lng: -5.1 },
-                { name: "Sistema Ibérico", info: "Borde oriental de la Meseta (Moncayo)", lat: 41.1, lng: -1.9 },
+                { name: "Sistema Central", info: "Pico Almanzor", lat: 40.3, lng: -5.1 },
+                { name: "Sistema Ibérico", info: "Borde oriental (Moncayo)", lat: 41.1, lng: -1.9 },
                 { name: "Sierra Morena", info: "Límite sur de la Meseta", lat: 38.3, lng: -4.5 },
                 { name: "Sistemas Béticos", info: "Sureste peninsular", lat: 37.5, lng: -2.5 },
                 { name: "Macizo Galaico", info: "Noroeste peninsular", lat: 42.5, lng: -7.8 },
-                { name: "Teide", info: "Pico más alto de España (Tenerife)", lat: 28.27, lng: -16.64 }
+                { name: "Teide", info: "Pico más alto de España (Canarias)", lat: 28.27, lng: -16.64 }
             ]
         };
 
@@ -224,6 +213,7 @@
             category: 'provincias',
             score: 0,
             currentTarget: null,
+            quizPending: [], // Lista de elementos que faltan por preguntar
             layers: []
         };
 
@@ -236,7 +226,6 @@
                 minZoom: 5
             }).setView([40.0, -3.7], 6);
             
-            // Capa base minimalista
             baseLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
             labelsLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png').addTo(map);
             
@@ -277,7 +266,7 @@
             }
             const colors = { provincias: '#3b82f6', montanas: '#b45309' };
             return {
-                radius: state.category === 'provincias' ? 10 : 14,
+                radius: state.category === 'provincias' ? 9 : 13,
                 fillColor: colors[state.category],
                 color: '#fff',
                 weight: 2,
@@ -289,7 +278,7 @@
             return `
                 <div class="p-2">
                     <h3 class="font-black text-blue-600 text-lg uppercase leading-none mb-1">${item.name}</h3>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Información:</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Detalles:</p>
                     <div class="text-sm text-slate-700 font-medium">
                         ${item.cap ? `📍 Capital: <span class="font-bold">${item.cap}</span><br>` : ''}
                         ${item.com ? `🏛️ Comunidad: <span class="font-bold">${item.com}</span><br>` : ''}
@@ -305,11 +294,11 @@
             document.getElementById('mode-quiz').className = m === 'quiz' ? 'p-3 rounded-2xl font-bold text-sm transition-all border-2 flex flex-col items-center gap-1 bg-blue-600 text-white border-blue-600' : 'p-3 rounded-2xl font-bold text-sm transition-all border-2 flex flex-col items-center gap-1 bg-white text-slate-600 border-slate-100';
             
             document.getElementById('quiz-ui').classList.toggle('hidden', m !== 'quiz');
-            document.getElementById('hint-box').innerHTML = m === 'quiz' ? '🎯 <b>Modo Examen:</b> Busca el nombre indicado arriba en el mapa. Las etiquetas de ciudades han desaparecido.' : '💡 <b>Modo Explorar:</b> Haz clic en los puntos para conocer datos sobre la geografía española.';
+            document.getElementById('hint-box').innerHTML = m === 'quiz' ? '🎯 <b>Modo Examen:</b> Busca el lugar indicado arriba. No se repetirán los aciertos.' : '💡 <b>Modo Explorar:</b> Haz clic en los puntos para conocer datos sobre España.';
 
             if (m === 'quiz') {
                 if (map.hasLayer(labelsLayer)) map.removeLayer(labelsLayer);
-                startNextQuizItem();
+                resetQuiz();
             } else {
                 if (!map.hasLayer(labelsLayer)) labelsLayer.addTo(map);
             }
@@ -320,19 +309,28 @@
             state.category = c;
             ['provincias', 'rios', 'montanas'].forEach(id => {
                 const btn = document.getElementById('cat-' + id);
-                if (id === c) {
-                    btn.className = "flex items-center gap-3 p-3.5 rounded-2xl bg-blue-50 border-2 border-blue-500 transition-all group";
-                } else {
-                    btn.className = "flex items-center gap-3 p-3.5 rounded-2xl bg-white border-2 border-slate-100 transition-all group";
-                }
+                btn.className = id === c 
+                    ? "flex items-center gap-3 p-3.5 rounded-2xl bg-blue-50 border-2 border-blue-500 transition-all group"
+                    : "flex items-center gap-3 p-3.5 rounded-2xl bg-white border-2 border-slate-100 transition-all group";
             });
             render();
-            if (state.mode === 'quiz') startNextQuizItem();
+            if (state.mode === 'quiz') resetQuiz();
+        }
+
+        function resetQuiz() {
+            // Copiamos todos los elementos de la categoría a la lista de pendientes
+            state.quizPending = [...geoData[state.category]];
+            startNextQuizItem();
         }
 
         function startNextQuizItem() {
-            const items = geoData[state.category];
-            state.currentTarget = items[Math.floor(Math.random() * items.length)];
+            if (state.quizPending.length === 0) {
+                showToast("🏆 ¡COMPLETADO!", "Has terminado la categoría", "🥇", "bg-yellow-500");
+                resetQuiz();
+                return;
+            }
+            const randomIndex = Math.floor(Math.random() * state.quizPending.length);
+            state.currentTarget = state.quizPending[randomIndex];
             document.getElementById('target-name').innerText = state.currentTarget.name;
         }
 
@@ -341,19 +339,26 @@
 
             if (item.name === state.currentTarget.name) {
                 state.score += 10;
-                showToast("¡CORRECTO!", "Buen trabajo", "✅", "bg-green-500");
+                showToast("¡CORRECTO!", "Siguiente pregunta...", "✅", "bg-green-500");
+                
+                // Eliminar de la lista de pendientes para que NO se repita
+                state.quizPending = state.quizPending.filter(i => i.name !== item.name);
+                
+                // Feedback visual momentáneo
                 if (state.category === 'rios') {
                     layer.setStyle({ color: '#22c55e', weight: 8 });
                 } else {
-                    layer.setStyle({ fillColor: '#22c55e', radius: 18 });
+                    layer.setStyle({ fillColor: '#22c55e', radius: 16 });
                 }
+
                 setTimeout(() => {
                     render();
                     startNextQuizItem();
                 }, 800);
             } else {
-                showToast("UPS...", "Esa no era", "❌", "bg-red-500");
+                showToast("UPS...", "Ese no es", "❌", "bg-red-500");
                 layer.setStyle({ fillColor: '#ef4444' });
+                setTimeout(() => render(), 500);
             }
             document.getElementById('score').innerText = state.score;
         }
@@ -362,8 +367,8 @@
             const t = document.getElementById('toast');
             const b = document.getElementById('toast-body');
             document.getElementById('toast-icon').innerText = icon;
-            document.getElementById('toast-text').innerHTML = `<span class="opacity-80 text-sm block font-bold uppercase">${title}</span>${msg}`;
-            b.className = `px-8 py-4 rounded-full shadow-2xl text-white font-black text-xl flex items-center gap-4 border-4 border-white ${color}`;
+            document.getElementById('toast-text').innerHTML = `<span class="opacity-80 text-[10px] block font-bold uppercase">${title}</span>${msg}`;
+            b.className = `px-8 py-4 rounded-full shadow-2xl text-white font-black text-lg flex items-center gap-4 border-4 border-white ${color}`;
             
             t.classList.remove('translate-y-20', 'opacity-0');
             setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 1500);
