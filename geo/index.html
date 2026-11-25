@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoEspaña Master - Geografía 1º ESO</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+            background: #aad3df;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .custom-popup .leaflet-popup-content-wrapper {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .community-poly {
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .sidebar-transition {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden">
+
+    <!-- HUD Superior -->
+    <nav class="h-20 glass z-[1001] flex items-center justify-between px-4 md:px-8 border-b border-slate-200">
+        <div class="flex items-center gap-4">
+            <div class="bg-gradient-to-br from-yellow-400 to-red-500 p-2.5 rounded-2xl shadow-lg rotate-2">
+                <span class="text-2xl">🌍</span>
+            </div>
+            <div class="hidden sm:block">
+                <h1 class="text-xl font-extrabold text-slate-800 tracking-tighter uppercase leading-none">GeoEspaña <span class="text-blue-600">Master</span></h1>
+                <p class="text-[10px] font-bold text-slate-400 tracking-[0.2em] uppercase mt-1">Geografía 1º ESO - Completo</p>
+            </div>
+        </div>
+
+        <div id="quiz-ui" class="hidden flex items-center gap-3 animate-in fade-in zoom-in duration-300">
+            <div class="glass px-6 py-2 rounded-2xl border-2 border-blue-500 shadow-xl shadow-blue-100 flex flex-col items-center min-w-[220px]">
+                <span class="text-[9px] font-bold text-blue-500 uppercase tracking-widest">Busca en el mapa:</span>
+                <span id="target-name" class="text-xl font-black text-slate-800 uppercase leading-none text-center">---</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="flex flex-col items-center glass px-4 py-1.5 rounded-xl border border-slate-200">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Puntos</span>
+                <span id="score" class="text-xl font-black text-blue-600">0</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow flex relative">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar-transition absolute left-4 top-4 bottom-4 w-72 z-[1000] flex flex-col gap-4 pointer-events-none">
+            <div class="glass p-5 rounded-3xl pointer-events-auto flex flex-col gap-6 shadow-2xl overflow-y-auto max-h-full">
+                <section>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 block">Modo de Juego</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="setMode('explorar')" id="mode-explorar" class="p-3 rounded-2xl font-bold text-sm transition-all border-2 flex flex-col items-center gap-1 bg-blue-600 text-white border-blue-600 shadow-lg">
+                            <span class="text-xl">🔍</span> Explorar
+                        </button>
+                        <button onclick="setMode('quiz')" id="mode-quiz" class="p-3 rounded-2xl font-bold text-sm transition-all border-2 flex flex-col items-center gap-1 bg-white text-slate-600 border-slate-100 hover:border-blue-200">
+                            <span class="text-xl">🎯</span> Examen
+                        </button>
+                    </div>
+                </section>
+
+                <section>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 block">Categorías</label>
+                    <div class="flex flex-col gap-2">
+                        <button onclick="setCategory('comunidades')" id="cat-comunidades" class="flex items-center gap-3 p-3 rounded-2xl bg-blue-50 border-2 border-blue-500 transition-all group">
+                            <span class="text-2xl group-hover:scale-110 transition-transform">🗺️</span>
+                            <div class="text-left">
+                                <p class="font-bold text-blue-900 text-sm leading-none">Comunidades</p>
+                                <p class="text-[9px] text-blue-500 font-bold mt-1 uppercase italic">Mapa por regiones</p>
+                            </div>
+                        </button>
+                        <button onclick="setCategory('capitalesCCAA')" id="cat-capitalesCCAA" class="flex items-center gap-3 p-3 rounded-2xl bg-white border-2 border-slate-100 transition-all group">
+                            <span class="text-2xl group-hover:scale-110 transition-transform">🔵</span>
+                            <div class="text-left">
+                                <p class="font-bold text-slate-600 text-sm leading-none">Capitales CCAA</p>
+                                <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase italic">Sedes de Gobierno</p>
+                            </div>
+                        </button>
+                        <button onclick="setCategory('provincias')" id="cat-provincias" class="flex items-center gap-3 p-3 rounded-2xl bg-white border-2 border-slate-100 transition-all group">
+                            <span class="text-2xl group-hover:scale-110 transition-transform">🏛️</span>
+                            <div class="text-left">
+                                <p class="font-bold text-slate-600 text-sm leading-none">Provincias</p>
+                                <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase italic">50 Provincias</p>
+                            </div>
+                        </button>
+                        <button onclick="setCategory('rios')" id="cat-rios" class="flex items-center gap-3 p-3 rounded-2xl bg-white border-2 border-slate-100 transition-all group">
+                            <span class="text-2xl group-hover:scale-110 transition-transform">🌊</span>
+                            <div class="text-left">
+                                <p class="font-bold text-slate-600 text-sm leading-none">Hidrografía</p>
+                                <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase italic">Ríos Principales</p>
+                            </div>
+                        </button>
+                        <button onclick="setCategory('montanas')" id="cat-montanas" class="flex items-center gap-3 p-3 rounded-2xl bg-white border-2 border-slate-100 transition-all group">
+                            <span class="text-2xl group-hover:scale-110 transition-transform">⛰️</span>
+                            <div class="text-left">
+                                <p class="font-bold text-slate-600 text-sm leading-none">Relieve</p>
+                                <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase italic">Sistemas y Picos</p>
+                            </div>
+                        </button>
+                    </div>
+                </section>
+
+                <div class="mt-auto p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                    <p id="hint-box" class="text-[11px] text-blue-800 font-semibold leading-relaxed">
+                        💡 Las fronteras peninsulares están ajustadas para que encajen perfectamente sin solaparse.
+                    </p>
+                </div>
+            </div>
+        </aside>
+
+        <div id="map"></div>
+
+        <!-- Toast de Feedback -->
+        <div id="toast" class="absolute bottom-10 left-1/2 -translate-x-1/2 z-[2000] pointer-events-none transform transition-all duration-500 translate-y-20 opacity-0">
+            <div id="toast-body" class="px-8 py-4 rounded-full shadow-2xl text-white font-black text-xl flex items-center gap-4 border-4 border-white">
+                <span id="toast-icon" class="text-3xl"></span>
+                <span id="toast-text"></span>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Vértices compartidos (Topología corregida para evitar solapamientos)
+        const sharedVertices = {
+            gal_ast: [43.5, -7.0], gal_cyl: [42.0, -6.8],
+            ast_can: [43.4, -4.6], ast_cyl: [43.0, -5.5],
+            can_pva: [43.4, -3.2], can_cyl: [42.9, -4.1],
+            pva_nav: [43.2, -1.8], pva_lar: [42.6, -2.6],
+            nav_ara: [42.6, -0.8], ara_cat: [42.1, 0.6],
+            cat_val: [40.6, 0.5], val_mur: [38.1, -0.8],
+            mur_and: [37.4, -1.6], and_ext: [38.1, -6.4],
+            ext_cyl: [40.3, -6.4], cyl_mad: [41.0, -3.6],
+            cyl_clm: [41.2, -2.2], clm_mad: [40.0, -3.2],
+            clm_val: [40.1, -1.2], clm_ara: [40.6, -1.4]
+        };
+
+        const geoData = {
+            comunidades: [
+                { name: "Galicia", color: "#16a34a", coords: [[43.7, -7.5], sharedVertices.gal_ast, [42.4, -6.9], sharedVertices.gal_cyl, [41.9, -9.1], [43.5, -9.2]] },
+                { name: "Asturias", color: "#22c55e", coords: [sharedVertices.gal_ast, [43.6, -5.8], sharedVertices.ast_can, sharedVertices.ast_cyl, [43.2, -6.5]] },
+                { name: "Cantabria", color: "#ef4444", coords: [sharedVertices.ast_can, [43.5, -3.8], sharedVertices.can_pva, sharedVertices.can_cyl, [43.1, -4.3]] },
+                { name: "País Vasco", color: "#dc2626", coords: [sharedVertices.can_pva, [43.4, -2.5], sharedVertices.pva_nav, sharedVertices.pva_lar, [42.8, -3.1]] },
+                { name: "Navarra", color: "#b91c1c", coords: [sharedVertices.pva_nav, [43.1, -0.8], sharedVertices.nav_ara, [41.9, -1.4], [42.2, -2.3]] },
+                { name: "Aragón", color: "#f59e0b", coords: [sharedVertices.nav_ara, [42.5, 0.6], sharedVertices.ara_cat, [41.0, 0.1], sharedVertices.clm_ara, [41.3, -1.9]] },
+                { name: "Cataluña", color: "#facc15", coords: [sharedVertices.ara_cat, [42.4, 3.2], [41.2, 1.8], sharedVertices.cat_val, [41.0, 0.6]] },
+                { name: "C. Valenciana", color: "#fbbf24", coords: [sharedVertices.cat_val, [39.5, -0.3], sharedVertices.val_mur, [38.8, -1.4], sharedVertices.clm_val, [40.1, -0.4]] },
+                { name: "Murcia", color: "#fb923c", coords: [sharedVertices.val_mur, [37.4, -1.2], sharedVertices.mur_and, [38.3, -2.1]] },
+                { name: "Andalucía", color: "#15803d", coords: [sharedVertices.mur_and, [36.7, -2.1], [36.0, -5.6], [37.2, -7.4], sharedVertices.and_ext, [38.5, -5.1]] },
+                { name: "Extremadura", color: "#4ade80", coords: [sharedVertices.and_ext, [38.5, -7.2], sharedVertices.ext_cyl, [39.8, -5.0]] },
+                { name: "Castilla-La Mancha", color: "#e2e8f0", coords: [sharedVertices.clm_ara, sharedVertices.clm_val, [38.5, -2.3], [38.6, -5.1], [39.8, -4.8], sharedVertices.clm_mad] },
+                { name: "Castilla y León", color: "#f8fafc", coords: [sharedVertices.ast_cyl, sharedVertices.can_cyl, sharedVertices.pva_lar, sharedVertices.cyl_clm, sharedVertices.cyl_mad, [39.9, -5.0], sharedVertices.ext_cyl, sharedVertices.gal_cyl, [43.1, -6.8]] },
+                { name: "Madrid", color: "#991b1b", coords: [sharedVertices.cyl_mad, [40.4, -3.2], sharedVertices.clm_mad, [40.2, -4.1]] },
+                { name: "La Rioja", color: "#9d174d", coords: [sharedVertices.pva_lar, [42.2, -2.0], sharedVertices.cyl_clm, [42.3, -2.9]] },
+                { 
+                    name: "Baleares", color: "#3b82f6", 
+                    coords: [
+                        [[39.4, 2.2], [39.9, 2.6], [39.9, 3.4], [39.2, 3.3]], // Mallorca
+                        [[39.8, 3.7], [40.1, 4.0], [40.0, 4.3], [39.7, 4.1]], // Menorca
+                        [[38.8, 1.1], [39.1, 1.4], [38.9, 1.6], [38.8, 1.3]]  // Ibiza
+                    ] 
+                },
+                { 
+                    name: "Canarias", color: "#fde047", 
+                    coords: [
+                        [[28.3, -16.8], [28.6, -16.3], [28.1, -16.3]], // Tenerife
+                        [[27.9, -15.7], [28.2, -15.4], [27.9, -15.3]], // G.C.
+                        [[28.5, -14.1], [28.8, -13.6], [28.1, -14.4]]  // F/L
+                    ] 
+                },
+                { name: "Ceuta", color: "#000000", coords: [[35.91, -5.35], [35.91, -5.28], [35.87, -5.28], [35.87, -5.35]] },
+                { name: "Melilla", color: "#000000", coords: [[35.32, -2.97], [35.32, -2.91], [35.27, -2.91], [35.27, -2.97]] }
+            ],
+            capitalesCCAA: [
+                { name: "Santiago de Compostela", com: "Galicia", lat: 42.8782, lng: -8.5448 },
+                { name: "Oviedo", com: "Asturias", lat: 43.3614, lng: -5.8593 },
+                { name: "Santander", com: "Cantabria", lat: 43.4623, lng: -3.8099 },
+                { name: "Vitoria", com: "País Vasco", lat: 42.8467, lng: -2.6716 },
+                { name: "Pamplona", com: "Navarra", lat: 42.8125, lng: -1.6457 },
+                { name: "Logroño", com: "La Rioja", lat: 42.4627, lng: -2.4450 },
+                { name: "Zaragoza", com: "Aragón", lat: 41.6488, lng: -0.8891 },
+                { name: "Barcelona", com: "Cataluña", lat: 41.3851, lng: 2.1734 },
+                { name: "Valencia", com: "C. Valenciana", lat: 39.4699, lng: -0.3763 },
+                { name: "Murcia", com: "Murcia", lat: 37.9922, lng: -1.1307 },
+                { name: "Sevilla", com: "Andalucía", lat: 37.3891, lng: -5.9845 },
+                { name: "Mérida", com: "Extremadura", lat: 38.9161, lng: -6.3437 },
+                { name: "Toledo", com: "Castilla-La Mancha", lat: 39.8628, lng: -4.0273 },
+                { name: "Valladolid", com: "Castilla y León", lat: 41.6523, lng: -4.7245 },
+                { name: "Madrid", com: "Madrid", lat: 40.4168, lng: -3.7038 },
+                { name: "Palma", com: "Baleares", lat: 39.5696, lng: 2.6502 },
+                { name: "Santa Cruz de Tenerife", com: "Canarias", lat: 28.4636, lng: -16.2518 },
+                { name: "Las Palmas de G.C.", com: "Canarias", lat: 28.1235, lng: -15.4363 },
+                { name: "Ceuta", com: "Ceuta", lat: 35.8894, lng: -5.3198 },
+                { name: "Melilla", com: "Melilla", lat: 35.2923, lng: -2.9388 }
+            ],
+            provincias: [
+                { name: "Álava", cap: "Vitoria", com: "País Vasco", lat: 42.84, lng: -2.67 },
+                { name: "Albacete", cap: "Albacete", com: "Castilla-La Mancha", lat: 38.99, lng: -1.85 },
+                { name: "Alicante", cap: "Alicante", com: "C. Valenciana", lat: 38.34, lng: -0.48 },
+                { name: "Almería", cap: "Almería", com: "Andalucía", lat: 36.83, lng: -2.46 },
+                { name: "Asturias", cap: "Oviedo", com: "Asturias", lat: 43.36, lng: -5.85 },
+                { name: "Ávila", cap: "Ávila", com: "Castilla y León", lat: 40.65, lng: -4.70 },
+                { name: "Badajoz", cap: "Badajoz", com: "Extremadura", lat: 38.87, lng: -6.97 },
+                { name: "Barcelona", cap: "Barcelona", com: "Cataluña", lat: 41.38, lng: 2.17 },
+                { name: "Burgos", cap: "Burgos", com: "Castilla y León", lat: 42.34, lng: -3.69 },
+                { name: "Cáceres", cap: "Cáceres", com: "Extremadura", lat: 39.47, lng: -6.37 },
+                { name: "Cádiz", cap: "Cádiz", com: "Andalucía", lat: 36.52, lng: -6.28 },
+                { name: "Cantabria", cap: "Santander", com: "Cantabria", lat: 43.46, lng: -3.80 },
+                { name: "Castellón", cap: "Castellón", com: "C. Valenciana", lat: 39.98, lng: -0.05 },
+                { name: "Ciudad Real", cap: "Ciudad Real", com: "Castilla-La Mancha", lat: 38.98, lng: -3.92 },
+                { name: "Córdoba", cap: "Córdoba", com: "Andalucía", lat: 37.88, lng: -4.77 },
+                { name: "Cuenca", cap: "Cuenca", com: "Castilla-La Mancha", lat: 40.07, lng: -2.13 },
+                { name: "Girona", cap: "Girona", com: "Cataluña", lat: 41.97, lng: 2.82 },
+                { name: "Granada", cap: "Granada", com: "Andalucía", lat: 37.17, lng: -3.59 },
+                { name: "Guadalajara", cap: "Guadalajara", com: "Castilla-La Mancha", lat: 40.63, lng: -3.16 },
+                { name: "Guipúzcoa", cap: "San Sebastián", com: "País Vasco", lat: 43.31, lng: -1.98 },
+                { name: "Huelva", cap: "Huelva", com: "Andalucía", lat: 37.26, lng: -6.94 },
+                { name: "Huesca", cap: "Huesca", com: "Aragón", lat: 42.13, lng: -0.40 },
+                { name: "Jaén", cap: "Jaén", com: "Andalucía", lat: 37.77, lng: -3.78 },
+                { name: "La Rioja", cap: "Logroño", com: "La Rioja", lat: 42.46, lng: -2.44 },
+                { name: "Las Palmas", cap: "Las Palmas de G.C.", com: "Canarias", lat: 28.12, lng: -15.43 },
+                { name: "León", cap: "León", com: "Castilla y León", lat: 42.59, lng: -5.56 },
+                { name: "Lleida", cap: "Lleida", com: "Cataluña", lat: 41.61, lng: 0.62 },
+                { name: "Lugo", cap: "Lugo", com: "Galicia", lat: 43.01, lng: -7.55 },
+                { name: "Madrid", cap: "Madrid", com: "Madrid", lat: 40.41, lng: -3.70 },
+                { name: "Málaga", cap: "Málaga", com: "Andalucía", lat: 36.72, lng: -4.42 },
+                { name: "Murcia", cap: "Murcia", com: "Murcia", lat: 37.99, lng: -1.13 },
+                { name: "Navarra", cap: "Pamplona", com: "Navarra", lat: 42.81, lng: -1.64 },
+                { name: "Ourense", cap: "Ourense", com: "Galicia", lat: 42.33, lng: -7.86 },
+                { name: "Palencia", cap: "Palencia", com: "Castilla y León", lat: 42.00, lng: -4.52 },
+                { name: "Pontevedra", cap: "Pontevedra", com: "Galicia", lat: 42.43, lng: -8.64 },
+                { name: "Salamanca", cap: "Salamanca", com: "Castilla y León", lat: 40.97, lng: -5.66 },
+                { name: "S.C. Tenerife", cap: "S.C. Tenerife", com: "Canarias", lat: 28.46, lng: -16.25 },
+                { name: "Segovia", cap: "Segovia", com: "Castilla y León", lat: 40.94, lng: -4.10 },
+                { name: "Sevilla", cap: "Sevilla", com: "Andalucía", lat: 37.38, lng: -5.98 },
+                { name: "Soria", cap: "Soria", com: "Castilla y León", lat: 41.76, lng: -2.47 },
+                { name: "Tarragona", cap: "Tarragona", com: "Cataluña", lat: 41.11, lng: 1.24 },
+                { name: "Teruel", cap: "Teruel", com: "Aragón", lat: 40.34, lng: -1.10 },
+                { name: "Toledo", cap: "Toledo", com: "Castilla-La Mancha", lat: 39.86, lng: -4.02 },
+                { name: "Valencia", cap: "Valencia", com: "C. Valenciana", lat: 39.46, lng: -0.37 },
+                { name: "Valladolid", cap: "Valladolid", com: "Castilla y León", lat: 41.65, lng: -4.72 },
+                { name: "Vizcaya", cap: "Bilbao", com: "País Vasco", lat: 43.26, lng: -2.93 },
+                { name: "Zamora", cap: "Zamora", com: "Castilla y León", lat: 41.50, lng: -5.74 },
+                { name: "Zaragoza", cap: "Zaragoza", com: "Aragón", lat: 41.64, lng: -0.88 },
+                { name: "Baleares", cap: "Palma", com: "Baleares", lat: 39.56, lng: 2.65 },
+                { name: "Ceuta", cap: "Ceuta", com: "Ceuta", lat: 35.88, lng: -5.31 },
+                { name: "Melilla", cap: "Melilla", com: "Melilla", lat: 35.29, lng: -2.93 }
+            ],
+            rios: [
+                { name: "Ebro", desc: "Río más caudaloso de España", coords: [[43.0, -4.0], [42.4, -3.0], [42.1, -1.5], [41.6, -0.8], [40.7, 0.8]] },
+                { name: "Tajo", desc: "Río más largo de la Península", coords: [[40.3, -1.8], [39.9, -4.0], [39.7, -6.0], [38.7, -9.4]] },
+                { name: "Duero", desc: "Gran caudal del norte", coords: [[41.9, -2.8], [41.5, -4.7], [41.1, -8.7]] },
+                { name: "Guadiana", desc: "Frontera con Portugal", coords: [[39.0, -3.0], [38.9, -6.5], [37.2, -7.4]] },
+                { name: "Guadalquivir", desc: "Cruza Andalucía", coords: [[37.9, -2.9], [37.4, -6.0], [36.7, -6.4]] },
+                { name: "Miño", desc: "Galicia", coords: [[43.2, -7.5], [41.8, -8.8]] },
+                { name: "Segura", desc: "Murcia y Alicante", coords: [[38.1, -2.5], [38.1, -0.6]] },
+                { name: "Júcar", desc: "C. Valenciana", coords: [[40.2, -1.9], [39.2, -0.2]] }
+            ],
+            montanas: [
+                { name: "Pirineos", info: "Aneto (3404m)", lat: 42.6, lng: 0.8 },
+                { name: "Sierra Nevada", info: "Mulhacén (3479m)", lat: 37.05, lng: -3.3 },
+                { name: "Sistema Central", info: "Pico Almanzor", lat: 40.3, lng: -5.1 },
+                { name: "Sistema Ibérico", info: "Moncayo", lat: 41.1, lng: -1.9 },
+                { name: "Cordillera Cantábrica", info: "Picos de Europa", lat: 43.1, lng: -4.8 },
+                { name: "Sierra Morena", info: "Límite Meseta", lat: 38.3, lng: -4.5 }
+            ]
+        };
+
+        // Estado Global
+        let currentMode = 'explorar';
+        let currentCategory = 'comunidades';
+        let score = 0;
+        let currentTarget = null;
+        let quizPending = [];
+        let mapLayers = [];
+        let mapInstance, baseLayer, labelsLayer;
+
+        function init() {
+            mapInstance = L.map('map', { zoomControl: false, attributionControl: false, minZoom: 5 }).setView([40.0, -3.7], 6);
+            baseLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxNativeZoom: 16 }).addTo(mapInstance);
+            labelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxNativeZoom: 16 }).addTo(mapInstance);
+            renderMap();
+        }
+
+        function renderMap() {
+            mapLayers.forEach(l => mapInstance.removeLayer(l));
+            mapLayers = [];
+            const items = geoData[currentCategory] || [];
+            const isQuiz = currentMode === 'quiz';
+
+            items.forEach(item => {
+                let layer;
+                if (currentCategory === 'comunidades') {
+                    layer = L.polygon(item.coords, { fillColor: item.color, color: '#475569', weight: 1.5, fillOpacity: 0.6, className: 'community-poly' });
+                } else if (currentCategory === 'rios') {
+                    layer = L.polyline(item.coords, { color: '#3b82f6', weight: 6, opacity: 0.7, lineCap: 'round' });
+                } else {
+                    const color = currentCategory === 'capitalesCCAA' ? '#2563eb' : (currentCategory === 'provincias' ? '#3b82f6' : '#b45309');
+                    layer = L.circleMarker([item.lat, item.lng], { radius: 10, fillColor: color, color: '#fff', weight: 2, fillOpacity: 0.9 });
+                }
+
+                if (!isQuiz) layer.bindPopup(createPopupContent(item), { className: 'custom-popup' });
+                else layer.on('click', () => handleQuizClick(item, layer));
+
+                layer.addTo(mapInstance);
+                mapLayers.push(layer);
+            });
+        }
+
+        function createPopupContent(item) {
+            return `<div class="p-2">
+                <h3 class="font-black text-blue-600 text-lg uppercase leading-none mb-1">${item.name}</h3>
+                <div class="text-sm text-slate-700 font-medium">
+                    ${item.cap ? `📍 Capital: <b>${item.cap}</b><br>` : ''}
+                    ${item.com ? `🏛️ Comunidad: <b>${item.com}</b><br>` : ''}
+                    ${item.info || item.desc || ''}
+                </div>
+            </div>`;
+        }
+
+        function setMode(m) {
+            currentMode = m;
+            document.getElementById('mode-explorar').className = m === 'explorar' ? 'p-3 rounded-2xl font-bold text-sm transition-all border-2 flex flex-col items-center gap-1 bg-blue-600 text-white border-blue-600 shadow-lg' : 'p-3 rounded-2xl font-bold text-sm transition-all border-2 flex flex-col items-center gap-1 bg-white text-slate-600 border-slate-100 hover:border-blue-200';
+            document.getElementById('mode-quiz').className = m === 'quiz' ? 'p-3 rounded-2xl font-bold text-sm transition-all border-2 flex flex-col items-center gap-1 bg-blue-600 text-white border-blue-600 shadow-lg' : 'p-3 rounded-2xl font-bold text-sm transition-all border-2 flex flex-col items-center gap-1 bg-white text-slate-600 border-slate-100 hover:border-blue-200';
+            document.getElementById('quiz-ui').classList.toggle('hidden', m !== 'quiz');
+            
+            if (m === 'quiz') {
+                if (mapInstance.hasLayer(labelsLayer)) mapInstance.removeLayer(labelsLayer);
+                startQuiz();
+            } else {
+                if (!mapInstance.hasLayer(labelsLayer)) labelsLayer.addTo(mapInstance);
+            }
+            renderMap();
+        }
+
+        function setCategory(c) {
+            currentCategory = c;
+            ['comunidades', 'capitalesCCAA', 'provincias', 'rios', 'montanas'].forEach(id => {
+                const btn = document.getElementById('cat-' + id);
+                if (btn) btn.className = id === c ? "flex items-center gap-3 p-3 rounded-2xl bg-blue-50 border-2 border-blue-500 transition-all group" : "flex items-center gap-3 p-3 rounded-2xl bg-white border-2 border-slate-100 transition-all group";
+            });
+            renderMap();
+            if (currentMode === 'quiz') startQuiz();
+        }
+
+        function startQuiz() {
+            quizPending = [...(geoData[currentCategory] || [])];
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            if (quizPending.length === 0) {
+                showToastMessage("🏆 ¡CATEGORÍA COMPLETADA!", "¡Eres un experto!", "🥇", "bg-yellow-500");
+                startQuiz();
+                return;
+            }
+            const randomIndex = Math.floor(Math.random() * quizPending.length);
+            currentTarget = quizPending[randomIndex];
+            document.getElementById('target-name').innerText = currentTarget.name;
+        }
+
+        function handleQuizClick(item, layer) {
+            if (currentMode !== 'quiz') return;
+            if (item.name === currentTarget.name) {
+                score += 15;
+                showToastMessage("¡EXCELENTE!", "¡Acertaste!", "✅", "bg-green-500");
+                quizPending = quizPending.filter(i => i.name !== item.name);
+                layer.setStyle({ fillColor: '#22c55e', fillOpacity: 0.9 });
+                setTimeout(() => { renderMap(); nextQuestion(); }, 800);
+            } else {
+                showToastMessage("UPS...", "Ese no es", "❌", "bg-red-500");
+                layer.setStyle({ fillColor: '#ef4444' });
+                setTimeout(() => renderMap(), 500);
+            }
+            document.getElementById('score').innerText = score;
+        }
+
+        function showToastMessage(title, msg, icon, color) {
+            const t = document.getElementById('toast');
+            const b = document.getElementById('toast-body');
+            document.getElementById('toast-icon').innerText = icon;
+            document.getElementById('toast-text').innerHTML = `<span class="opacity-80 text-[10px] block font-bold uppercase">${title}</span>${msg}`;
+            b.className = `px-8 py-4 rounded-3xl shadow-2xl text-white font-black text-lg flex items-center gap-4 border-4 border-white ${color}`;
+            t.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 1500);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
