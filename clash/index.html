@@ -54,7 +54,6 @@
 </head>
 <body>
 
-<p style="text-align:center;margin-bottom:8px"><a href="/" style="color:var(--text-muted);font-size:.85rem;text-decoration:none">← Inicio</a></p>
 <h1>📊 Mi Colección de Clash Royale</h1>
 <p class="subtitle" id="subtitle"></p>
 
@@ -71,7 +70,7 @@
 
 <div class="filters">
     <input type="text" id="playerTag" placeholder="#ETIQUETA de jugador" size="14">
-    <input type="text" id="apiUrl" placeholder="URL de la función (por defecto /api/cartas)" size="38">
+    <input type="text" id="apiUrl" placeholder="URL de tu función (https://....vercel.app/api/cartas)" size="38">
     <button id="loadBtn" type="button">⬇️ Cargar desde mi perfil</button>
 </div>
 <div class="filters">
@@ -90,11 +89,11 @@
 
 <div id="cardsContainer" class="grid"></div>
 
-<p class="note">Tus datos se guardan solos en este navegador. Para ver imágenes, crea una carpeta <b>imagenes</b> junto a este archivo con ficheros como <b>Hog Rider.png</b> (o .jpg).</p>
+<p class="note">Tus datos se guardan solos en este navegador. Las imágenes se cargan automáticamente desde la API oficial al usar «Cargar desde mi perfil».</p>
 
 <script>
 const CARDS_DATA = [
-    // Comunes
+    // Comunes (30)
     { name: "Archers", rarity: "Common", elixir: 3 },
     { name: "Arrows", rarity: "Common", elixir: 3 },
     { name: "Knight", rarity: "Common", elixir: 3 },
@@ -121,8 +120,11 @@ const CARDS_DATA = [
     { name: "Skeleton Dragons", rarity: "Common", elixir: 4 },
     { name: "Electro Spirit", rarity: "Common", elixir: 1 },
     { name: "Berserker", rarity: "Common", elixir: 2 },
+    { name: "Giant Snowball", rarity: "Common", elixir: 2 },
+    { name: "Royal Giant", rarity: "Common", elixir: 6 },
+    { name: "Royal Recruits", rarity: "Common", elixir: 7 },
     { name: "Tower Princess", rarity: "Common", elixir: "Torre" },
-    // Raras
+    // Raras (31)
     { name: "Fireball", rarity: "Rare", elixir: 4 },
     { name: "Giant", rarity: "Rare", elixir: 5 },
     { name: "Mini P.E.K.K.A.", rarity: "Rare", elixir: 4 },
@@ -152,7 +154,9 @@ const CARDS_DATA = [
     { name: "Goblin Demolisher", rarity: "Rare", elixir: 4 },
     { name: "Suspicious Bush", rarity: "Rare", elixir: 2 },
     { name: "Minion Giant", rarity: "Rare", elixir: 4 },
-    // Épicas
+    { name: "Elixir Collector", rarity: "Rare", elixir: 6 },
+    { name: "Royal Hogs", rarity: "Rare", elixir: 5 },
+    // Épicas (34)
     { name: "Baby Dragon", rarity: "Epic", elixir: 4 },
     { name: "Goblin Barrel", rarity: "Epic", elixir: 3 },
     { name: "P.E.K.K.A.", rarity: "Epic", elixir: 7 },
@@ -183,7 +187,11 @@ const CARDS_DATA = [
     { name: "Void", rarity: "Epic", elixir: 5 },
     { name: "Goblin Curse", rarity: "Epic", elixir: 2 },
     { name: "Rune Giant", rarity: "Epic", elixir: 4 },
-    // Legendarias
+    { name: "Dark Prince", rarity: "Epic", elixir: 4 },
+    { name: "Mirror", rarity: "Epic", elixir: "Variable" },
+    { name: "Rage", rarity: "Epic", elixir: 2 },
+    { name: "Vines", rarity: "Epic", elixir: 3 },
+    // Legendarias (23)
     { name: "Princess", rarity: "Legendary", elixir: 3 },
     { name: "Ice Wizard", rarity: "Legendary", elixir: 3 },
     { name: "Miner", rarity: "Legendary", elixir: 3 },
@@ -206,9 +214,10 @@ const CARDS_DATA = [
     { name: "Dagger Duchess", rarity: "Legendary", elixir: "Torre" },
     { name: "Goblin Machine", rarity: "Legendary", elixir: 5 },
     { name: "Royal Chef", rarity: "Legendary", elixir: "Torre" },
-    { name: "Spirit Empress", rarity: "Legendary", elixir: "3/6" },
+    { name: "Spirit Empress", rarity: "Legendary", elixir: "Variable" },
     { name: "Ronin", rarity: "Legendary", elixir: 5 },
-    // Campeones
+    { name: "Party Rocket", rarity: "Legendary", elixir: 5 },
+    // Campeones (8)
     { name: "Golden Knight", rarity: "Champion", elixir: 4 },
     { name: "Skeleton King", rarity: "Champion", elixir: 4 },
     { name: "Archer Queen", rarity: "Champion", elixir: 5 },
@@ -294,14 +303,15 @@ CARDS_DATA.forEach(card => {
         </div>`;
     div.querySelector('.card-name').textContent = card.name;
 
-    // Imagen opcional desde carpeta "imagenes"
+    // Imagen: prioriza la que viene de la API, si no, intenta un CDN público
     const img = new Image();
-    const tries = [`imagenes/${card.name}.png`, `imagenes/${card.name}.jpg`, `imagenes/${card.name}.webp`];
-    let i = 0;
-    img.onerror = () => { i++; if (i < tries.length) img.src = tries[i]; else img.remove(); };
     img.alt = card.name;
-    img.src = tries[0];
-    div.querySelector('.avatar').appendChild(img);
+    img.style.display = 'none'; // Ocultar hasta que cargue
+    // Generamos un nombre "limpio" para intentar el CDN (ej: "Hog Rider" -> "hog-rider")
+    const cdnName = card.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    img.src = `https://cdn.royaleapi.com/static/img/cards-150/${cdnName}.png`;
+    img.onload = () => { img.style.display = 'block'; div.querySelector('.avatar').appendChild(img); };
+    img.onerror = () => { img.remove(); }; // Si falla, se queda el avatar con iniciales
 
     container.appendChild(div);
 });
@@ -362,7 +372,7 @@ const norm = n => n.toLowerCase().replace(/[^a-z0-9]/g, '');
 const MAX_LEVEL = 16;
 try {
     document.getElementById('playerTag').value = localStorage.getItem('cr_tag') || '';
-    document.getElementById('apiUrl').value = localStorage.getItem('cr_api') || '/api/cartas';
+    document.getElementById('apiUrl').value = localStorage.getItem('cr_api') || '';
 } catch (e) {}
 
 document.getElementById('loadBtn').addEventListener('click', async () => {
@@ -387,6 +397,18 @@ document.getElementById('loadBtn').addEventListener('click', async () => {
             el.querySelector('.owned-check').checked = true;
             el.querySelector('.evo-check').checked = !!c.evo;
             el.classList.add('owned');
+            // Si la API nos dio la URL de la imagen, la actualizamos
+            if (c.image) {
+                const avatar = el.querySelector('.avatar');
+                let imgEl = avatar.querySelector('img');
+                if (!imgEl) {
+                    imgEl = document.createElement('img');
+                    imgEl.alt = c.name;
+                    avatar.appendChild(imgEl);
+                }
+                imgEl.src = c.image;
+                imgEl.style.display = 'block';
+            }
             found++;
         });
         save(); applyFilters();
@@ -421,56 +443,3 @@ function download(text, filename, type) {
     a.href = url; a.download = filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
-}
-
-document.getElementById('generateBtn').addEventListener('click', generateMarkdown);
-
-document.getElementById('exportBtn').addEventListener('click', () => {
-    download(JSON.stringify(getState(), null, 2), 'clash_royale_copia.json', 'application/json');
-});
-document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
-document.getElementById('importFile').addEventListener('change', e => {
-    const f = e.target.files[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-        try { applyState(JSON.parse(reader.result)); save(); applyFilters(); statusEl.textContent = "✔ Copia importada"; }
-        catch (err) { statusEl.textContent = "⚠ Archivo no válido"; }
-    };
-    reader.readAsText(f);
-    e.target.value = '';
-});
-
-// Marca/desmarca «Tengo» en las cartas visibles (respeta buscador y filtro de rareza)
-function setOwnedVisible(value) {
-    document.querySelectorAll('.card-item:not(.hidden)').forEach(el => {
-        el.querySelector('.owned-check').checked = value;
-        el.classList.toggle('owned', value);
-    });
-    save(); applyFilters();
-}
-document.getElementById('markAllBtn').addEventListener('click', () => setOwnedVisible(true));
-document.getElementById('unmarkAllBtn').addEventListener('click', () => setOwnedVisible(false));
-
-document.getElementById('selectAllMaxBtn').addEventListener('click', () => {
-    document.querySelectorAll('.card-item').forEach(el => {
-        el.querySelector('.level-input').value = 16;
-        el.querySelector('.owned-check').checked = true;
-        el.classList.add('owned');
-    });
-    save(); applyFilters();
-});
-document.getElementById('clearBtn').addEventListener('click', () => {
-    if (!confirm('¿Borrar todos los datos guardados?')) return;
-    document.querySelectorAll('.card-item').forEach(el => {
-        el.querySelector('.level-input').value = DEFAULT_LEVEL;
-        el.querySelector('.evo-check').checked = false;
-        el.querySelector('.hero-check').checked = false;
-        el.querySelector('.owned-check').checked = false;
-        el.classList.remove('owned');
-    });
-    save(); applyFilters();
-});
-</script>
-</body>
-</html>
