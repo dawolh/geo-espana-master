@@ -70,7 +70,7 @@
 
 <div class="filters">
     <input type="text" id="playerTag" placeholder="#ETIQUETA de jugador" size="14">
-    <input type="text" id="apiUrl" placeholder="URL de tu función (https://....vercel.app/api/cartas)" size="38">
+    <input type="text" id="apiUrl" placeholder="URL de la función (por defecto: /api/cartas)" size="38">
     <button id="loadBtn" type="button">⬇️ Cargar desde mi perfil</button>
 </div>
 <div class="filters">
@@ -372,13 +372,13 @@ const norm = n => n.toLowerCase().replace(/[^a-z0-9]/g, '');
 const MAX_LEVEL = 16;
 try {
     document.getElementById('playerTag').value = localStorage.getItem('cr_tag') || '';
-    document.getElementById('apiUrl').value = localStorage.getItem('cr_api') || '';
+    document.getElementById('apiUrl').value = localStorage.getItem('cr_api') || '/api/cartas';
 } catch (e) {}
 
 document.getElementById('loadBtn').addEventListener('click', async () => {
     const tag = document.getElementById('playerTag').value.trim();
-    const api = document.getElementById('apiUrl').value.trim();
-    if (!tag || !api) { statusEl.textContent = "⚠ Escribe la etiqueta y la URL de la función"; return; }
+    const api = document.getElementById('apiUrl').value.trim() || '/api/cartas';
+    if (!tag) { statusEl.textContent = "⚠ Escribe tu etiqueta de jugador"; return; }
     try { localStorage.setItem('cr_tag', tag); localStorage.setItem('cr_api', api); } catch (e) {}
     statusEl.textContent = "⏳ Cargando tu perfil...";
     try {
