@@ -15,7 +15,9 @@ module.exports = async (req, res) => {
       name: d.name,
       cards: (d.cards || []).map(c => ({
         name: c.name, level: c.level, maxLevel: c.maxLevel,
-        evo: (c.evolutionLevel || 0) > 0
+        evo: (c.evolutionLevel || 0) > 0,
+        // AÑADIDO: URL de la imagen oficial de la carta
+        image: c.iconUrls ? c.iconUrls.medium : null
       }))
     });
   } catch (e) {
