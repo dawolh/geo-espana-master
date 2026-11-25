@@ -443,3 +443,66 @@ function download(text, filename, type) {
     a.href = url; a.download = filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+// ---------- Botones ----------
+function refresh() { save(); applyFilters(); }
+
+document.getElementById('generateBtn').addEventListener('click', generateMarkdown);
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+    download(JSON.stringify(getState(), null, 2),
+        `copia_clash_royale_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+});
+
+const importFile = document.getElementById('importFile');
+document.getElementById('importBtn').addEventListener('click', () => importFile.click());
+importFile.addEventListener('change', () => {
+    const file = importFile.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        try {
+            const data = JSON.parse(reader.result);
+            if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Formato no válido');
+            applyState(data);
+            refresh();
+            statusEl.textContent = "✔ Copia importada";
+        } catch (e) {
+            statusEl.textContent = "⚠ No se pudo importar: " + e.message;
+        }
+        importFile.value = '';
+    };
+    reader.onerror = () => { statusEl.textContent = "⚠ No se pudo leer el archivo"; importFile.value = ''; };
+    reader.readAsText(file);
+});
+
+function setAll(fn) {
+    document.querySelectorAll('.card-item').forEach(fn);
+    refresh();
+}
+document.getElementById('markAllBtn').addEventListener('click', () => setAll(markOwned));
+document.getElementById('unmarkAllBtn').addEventListener('click', () => setAll(el => {
+    el.querySelector('.owned-check').checked = false;
+    el.classList.remove('owned');
+}));
+document.getElementById('selectAllMaxBtn').addEventListener('click', () => setAll(el => {
+    el.querySelector('.level-input').value = MAX_LEVEL;
+    markOwned(el);
+}));
+document.getElementById('clearBtn').addEventListener('click', () => {
+    if (!confirm('¿Borrar todos los datos y volver a los valores por defecto?')) return;
+    document.querySelectorAll('.card-item').forEach(el => {
+        el.querySelector('.level-input').value = DEFAULT_LEVEL;
+        el.querySelector('.owned-check').checked = false;
+        el.querySelector('.evo-check').checked = false;
+        el.querySelector('.hero-check').checked = false;
+        el.classList.remove('owned');
+    });
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    applyFilters();
+    statusEl.textContent = "🗑️ Datos borrados";
+});
+</script>
+</body>
+</html>
