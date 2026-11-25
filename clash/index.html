@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Colección de Clash Royale</title>
+<style>
+    :root {
+        --bg: #1a1a2e; --card-bg: #16213e; --accent: #e94560; --accent-hover: #c73650;
+        --text: #eaeaea; --text-muted: #a0a0b0; --border: #2a2a4a; --success: #4ecca3;
+        --common: #9aa3b2; --rare: #f08a24; --epic: #b05cf0; --legendary: #4fd1ff; --champion: #ffd23f;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); padding: 20px; line-height: 1.6; }
+    h1 { text-align: center; margin-bottom: 6px; color: var(--accent); font-size: 2rem; }
+    .subtitle { text-align: center; color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 15px; }
+    button { background: var(--accent); color: #fff; border: none; padding: 11px 20px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background .2s, transform .1s; }
+    button:hover { background: var(--accent-hover); }
+    button:active { transform: scale(.97); }
+    button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    button.secondary:hover { background: var(--card-bg); }
+    .filters { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center; margin-bottom: 8px; }
+    .filters input[type="text"], .filters select { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); font-size: .9rem; }
+    .filters label { font-size: .9rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .status { text-align: center; font-size: .85rem; color: var(--success); min-height: 1.4em; margin-bottom: 15px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 15px; max-width: 1400px; margin: 0 auto; }
+    .card-item { --rc: var(--common); background: var(--card-bg); border: 2px solid var(--border); border-left: 6px solid var(--rc); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; transition: box-shadow .2s, border-color .2s; }
+    .card-item[data-rarity="Rare"] { --rc: var(--rare); }
+    .card-item[data-rarity="Epic"] { --rc: var(--epic); }
+    .card-item[data-rarity="Legendary"] { --rc: var(--legendary); }
+    .card-item[data-rarity="Champion"] { --rc: var(--champion); }
+    .card-item:hover { box-shadow: 0 0 14px -2px var(--rc); border-color: var(--rc); }
+    .card-item.owned { box-shadow: 0 0 10px -3px var(--rc); }
+    .top { display: flex; gap: 12px; align-items: center; }
+    .avatar { width: 56px; height: 56px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: #111; background: var(--rc); position: relative; overflow: hidden; }
+    .avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .info { flex: 1; min-width: 0; }
+    .card-name { font-weight: 700; font-size: 1.02rem; }
+    .badge { display: inline-block; font-size: .72rem; font-weight: 700; padding: 1px 8px; border-radius: 20px; background: var(--rc); color: #111; margin-right: 6px; }
+    .card-meta { font-size: .8rem; color: var(--text-muted); }
+    .controls { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .level-input { width: 48px; padding: 6px 4px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: .95rem; text-align: center; -moz-appearance: textfield; }
+    .level-input::-webkit-inner-spin-button, .level-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .level-box { display: flex; align-items: center; gap: 4px; font-size: .9rem; }
+    .lvl-btn { width: 30px; height: 30px; padding: 0; border-radius: 6px; font-size: 1.1rem; line-height: 1; }
+    .toggles { display: flex; gap: 10px; }
+    .toggle-label { display: flex; align-items: center; gap: 4px; font-size: .85rem; cursor: pointer; color: var(--text-muted); }
+    .toggle-label input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+    .toggle-label input:checked + span { color: var(--success); font-weight: 600; }
+    .hidden { display: none !important; }
+    .note { text-align: center; color: var(--text-muted); font-size: .8rem; margin-top: 25px; }
+</style>
+</head>
+<body>
+
+<p style="text-align:center;margin-bottom:8px"><a href="/" style="color:var(--text-muted);font-size:.85rem;text-decoration:none">← Inicio</a></p>
+<h1>📊 Mi Colección de Clash Royale</h1>
+<p class="subtitle" id="subtitle"></p>
+
+<div class="toolbar">
+    <button id="generateBtn">📄 Generar Archivo .md</button>
+    <button id="exportBtn" class="secondary">💾 Exportar copia (.json)</button>
+    <button id="importBtn" class="secondary">📂 Importar copia</button>
+    <button id="markAllBtn" class="secondary">✅ Marcar todas «Tengo»</button>
+    <button id="unmarkAllBtn" class="secondary">⬜ Desmarcar todas</button>
+    <button id="selectAllMaxBtn" class="secondary">⭐ Nivel Máx (16)</button>
+    <button id="clearBtn" class="secondary">🗑️ Limpiar Todo</button>
+    <input type="file" id="importFile" accept=".json" class="hidden">
+</div>
+
+<div class="filters">
+    <input type="text" id="playerTag" placeholder="#ETIQUETA de jugador" size="14">
+    <input type="text" id="apiUrl" placeholder="URL de la función (por defecto /api/cartas)" size="38">
+    <button id="loadBtn" type="button">⬇️ Cargar desde mi perfil</button>
+</div>
+<div class="filters">
+    <input type="text" id="search" placeholder="🔍 Buscar carta...">
+    <select id="rarityFilter">
+        <option value="">Todas las rarezas</option>
+        <option value="Common">Comunes</option>
+        <option value="Rare">Raras</option>
+        <option value="Epic">Épicas</option>
+        <option value="Legendary">Legendarias</option>
+        <option value="Champion">Campeones</option>
+    </select>
+    <label><input type="checkbox" id="onlyOwned"> Solo las que tengo</label>
+</div>
+<div class="status" id="status"></div>
+
+<div id="cardsContainer" class="grid"></div>
+
+<p class="note">Tus datos se guardan solos en este navegador. Para ver imágenes, crea una carpeta <b>imagenes</b> junto a este archivo con ficheros como <b>Hog Rider.png</b> (o .jpg).</p>
+
+<script>
+const CARDS_DATA = [
+    // Comunes
+    { name: "Archers", rarity: "Common", elixir: 3 },
+    { name: "Arrows", rarity: "Common", elixir: 3 },
+    { name: "Knight", rarity: "Common", elixir: 3 },
+    { name: "Minions", rarity: "Common", elixir: 3 },
+    { name: "Goblins", rarity: "Common", elixir: 2 },
+    { name: "Spear Goblins", rarity: "Common", elixir: 2 },
+    { name: "Bomber", rarity: "Common", elixir: 2 },
+    { name: "Skeletons", rarity: "Common", elixir: 1 },
+    { name: "Barbarians", rarity: "Common", elixir: 5 },
+    { name: "Cannon", rarity: "Common", elixir: 3 },
+    { name: "Mortar", rarity: "Common", elixir: 4 },
+    { name: "Zap", rarity: "Common", elixir: 2 },
+    { name: "Minion Horde", rarity: "Common", elixir: 5 },
+    { name: "Tesla", rarity: "Common", elixir: 4 },
+    { name: "Fire Spirit", rarity: "Common", elixir: 1 },
+    { name: "Ice Spirit", rarity: "Common", elixir: 1 },
+    { name: "Elite Barbarians", rarity: "Common", elixir: 6 },
+    { name: "Goblin Gang", rarity: "Common", elixir: 3 },
+    { name: "Bats", rarity: "Common", elixir: 2 },
+    { name: "Skeleton Barrel", rarity: "Common", elixir: 3 },
+    { name: "Rascals", rarity: "Common", elixir: 5 },
+    { name: "Firecracker", rarity: "Common", elixir: 3 },
+    { name: "Royal Delivery", rarity: "Common", elixir: 3 },
+    { name: "Skeleton Dragons", rarity: "Common", elixir: 4 },
+    { name: "Electro Spirit", rarity: "Common", elixir: 1 },
+    { name: "Berserker", rarity: "Common", elixir: 2 },
+    { name: "Tower Princess", rarity: "Common", elixir: "Torre" },
+    // Raras
+    { name: "Fireball", rarity: "Rare", elixir: 4 },
+    { name: "Giant", rarity: "Rare", elixir: 5 },
+    { name: "Mini P.E.K.K.A.", rarity: "Rare", elixir: 4 },
+    { name: "Musketeer", rarity: "Rare", elixir: 4 },
+    { name: "Goblin Hut", rarity: "Rare", elixir: 4 },
+    { name: "Tombstone", rarity: "Rare", elixir: 3 },
+    { name: "Valkyrie", rarity: "Rare", elixir: 4 },
+    { name: "Bomb Tower", rarity: "Rare", elixir: 4 },
+    { name: "Inferno Tower", rarity: "Rare", elixir: 5 },
+    { name: "Wizard", rarity: "Rare", elixir: 5 },
+    { name: "Hog Rider", rarity: "Rare", elixir: 4 },
+    { name: "Rocket", rarity: "Rare", elixir: 6 },
+    { name: "Barbarian Hut", rarity: "Rare", elixir: 6 },
+    { name: "Three Musketeers", rarity: "Rare", elixir: 9 },
+    { name: "Furnace", rarity: "Rare", elixir: 4 },
+    { name: "Mega Minion", rarity: "Rare", elixir: 3 },
+    { name: "Ice Golem", rarity: "Rare", elixir: 2 },
+    { name: "Dart Goblin", rarity: "Rare", elixir: 3 },
+    { name: "Battle Ram", rarity: "Rare", elixir: 4 },
+    { name: "Flying Machine", rarity: "Rare", elixir: 4 },
+    { name: "Zappies", rarity: "Rare", elixir: 4 },
+    { name: "Earthquake", rarity: "Rare", elixir: 3 },
+    { name: "Goblin Cage", rarity: "Rare", elixir: 4 },
+    { name: "Elixir Golem", rarity: "Rare", elixir: 3 },
+    { name: "Battle Healer", rarity: "Rare", elixir: 4 },
+    { name: "Heal Spirit", rarity: "Rare", elixir: 1 },
+    { name: "Goblin Demolisher", rarity: "Rare", elixir: 4 },
+    { name: "Suspicious Bush", rarity: "Rare", elixir: 2 },
+    { name: "Minion Giant", rarity: "Rare", elixir: 4 },
+    // Épicas
+    { name: "Baby Dragon", rarity: "Epic", elixir: 4 },
+    { name: "Goblin Barrel", rarity: "Epic", elixir: 3 },
+    { name: "P.E.K.K.A.", rarity: "Epic", elixir: 7 },
+    { name: "Skeleton Army", rarity: "Epic", elixir: 3 },
+    { name: "Witch", rarity: "Epic", elixir: 5 },
+    { name: "Balloon", rarity: "Epic", elixir: 5 },
+    { name: "Prince", rarity: "Epic", elixir: 5 },
+    { name: "Freeze", rarity: "Epic", elixir: 4 },
+    { name: "Giant Skeleton", rarity: "Epic", elixir: 6 },
+    { name: "Lightning", rarity: "Epic", elixir: 6 },
+    { name: "Golem", rarity: "Epic", elixir: 8 },
+    { name: "X-Bow", rarity: "Epic", elixir: 6 },
+    { name: "Poison", rarity: "Epic", elixir: 4 },
+    { name: "Guards", rarity: "Epic", elixir: 3 },
+    { name: "Bowler", rarity: "Epic", elixir: 5 },
+    { name: "Tornado", rarity: "Epic", elixir: 3 },
+    { name: "Clone", rarity: "Epic", elixir: 3 },
+    { name: "Executioner", rarity: "Epic", elixir: 5 },
+    { name: "Cannon Cart", rarity: "Epic", elixir: 5 },
+    { name: "Hunter", rarity: "Epic", elixir: 4 },
+    { name: "Barbarian Barrel", rarity: "Epic", elixir: 2 },
+    { name: "Goblin Giant", rarity: "Epic", elixir: 6 },
+    { name: "Electro Dragon", rarity: "Epic", elixir: 5 },
+    { name: "Wall Breakers", rarity: "Epic", elixir: 2 },
+    { name: "Electro Giant", rarity: "Epic", elixir: 7 },
+    { name: "Goblin Drill", rarity: "Epic", elixir: 4 },
+    { name: "Cannoneer", rarity: "Epic", elixir: "Torre" },
+    { name: "Void", rarity: "Epic", elixir: 5 },
+    { name: "Goblin Curse", rarity: "Epic", elixir: 2 },
+    { name: "Rune Giant", rarity: "Epic", elixir: 4 },
+    // Legendarias
+    { name: "Princess", rarity: "Legendary", elixir: 3 },
+    { name: "Ice Wizard", rarity: "Legendary", elixir: 3 },
+    { name: "Miner", rarity: "Legendary", elixir: 3 },
+    { name: "Sparky", rarity: "Legendary", elixir: 6 },
+    { name: "Lava Hound", rarity: "Legendary", elixir: 7 },
+    { name: "The Log", rarity: "Legendary", elixir: 2 },
+    { name: "Lumberjack", rarity: "Legendary", elixir: 4 },
+    { name: "Inferno Dragon", rarity: "Legendary", elixir: 4 },
+    { name: "Graveyard", rarity: "Legendary", elixir: 5 },
+    { name: "Electro Wizard", rarity: "Legendary", elixir: 4 },
+    { name: "Bandit", rarity: "Legendary", elixir: 3 },
+    { name: "Night Witch", rarity: "Legendary", elixir: 4 },
+    { name: "Mega Knight", rarity: "Legendary", elixir: 7 },
+    { name: "Royal Ghost", rarity: "Legendary", elixir: 3 },
+    { name: "Magic Archer", rarity: "Legendary", elixir: 4 },
+    { name: "Ram Rider", rarity: "Legendary", elixir: 5 },
+    { name: "Fisherman", rarity: "Legendary", elixir: 3 },
+    { name: "Mother Witch", rarity: "Legendary", elixir: 4 },
+    { name: "Phoenix", rarity: "Legendary", elixir: 4 },
+    { name: "Dagger Duchess", rarity: "Legendary", elixir: "Torre" },
+    { name: "Goblin Machine", rarity: "Legendary", elixir: 5 },
+    { name: "Royal Chef", rarity: "Legendary", elixir: "Torre" },
+    { name: "Spirit Empress", rarity: "Legendary", elixir: "3/6" },
+    { name: "Ronin", rarity: "Legendary", elixir: 5 },
+    // Campeones
+    { name: "Golden Knight", rarity: "Champion", elixir: 4 },
+    { name: "Skeleton King", rarity: "Champion", elixir: 4 },
+    { name: "Archer Queen", rarity: "Champion", elixir: 5 },
+    { name: "Mighty Miner", rarity: "Champion", elixir: 4 },
+    { name: "Monk", rarity: "Champion", elixir: 5 },
+    { name: "Little Prince", rarity: "Champion", elixir: 3 },
+    { name: "Goblinstein", rarity: "Champion", elixir: 5 },
+    { name: "Boss Bandit", rarity: "Champion", elixir: 6 }
+];
+
+const RARITY_ES = { Common: "Común", Rare: "Rara", Epic: "Épica", Legendary: "Legendaria", Champion: "Campeón" };
+const STORAGE_KEY = "cr_coleccion_v1";
+const DEFAULT_LEVEL = 11;
+const container = document.getElementById('cardsContainer');
+const statusEl = document.getElementById('status');
+document.getElementById('subtitle').textContent =
+    `${CARDS_DATA.length} cartas, todas con nivel ${DEFAULT_LEVEL} por defecto. Ajusta el nivel con − y +, y marca las que tienes, evolución y héroe. Se guarda solo.`;
+
+// ---------- Guardado ----------
+function readStore() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; }
+}
+function getState() {
+    const data = {};
+    document.querySelectorAll('.card-item').forEach(el => {
+        data[el.dataset.name] = {
+            level: parseInt(el.querySelector('.level-input').value) || DEFAULT_LEVEL,
+            evo: el.querySelector('.evo-check').checked,
+            hero: el.querySelector('.hero-check').checked,
+            owned: el.querySelector('.owned-check').checked
+        };
+    });
+    return data;
+}
+function applyState(data) {
+    document.querySelectorAll('.card-item').forEach(el => {
+        const s = data[el.dataset.name];
+        if (!s) return;
+        el.querySelector('.level-input').value = s.level || DEFAULT_LEVEL;
+        el.querySelector('.evo-check').checked = !!s.evo;
+        el.querySelector('.hero-check').checked = !!s.hero;
+        el.querySelector('.owned-check').checked = !!s.owned;
+        el.classList.toggle('owned', !!s.owned);
+    });
+}
+let saveTimer;
+function save() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(getState()));
+        statusEl.textContent = "✔ Guardado " + new Date().toLocaleTimeString('es-ES');
+    } catch (e) {
+        statusEl.textContent = "⚠ No se pudo guardar en el navegador. Usa «Exportar copia».";
+    }
+}
+function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(save, 250); }
+
+// ---------- Render ----------
+CARDS_DATA.forEach(card => {
+    const div = document.createElement('div');
+    div.className = 'card-item';
+    div.dataset.name = card.name;
+    div.dataset.rarity = card.rarity;
+    const initials = card.name.replace(/[^A-Za-z ]/g, '').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    div.innerHTML = `
+        <div class="top">
+            <div class="avatar">${initials}</div>
+            <div class="info">
+                <div class="card-name"></div>
+                <div class="card-meta"><span class="badge">${RARITY_ES[card.rarity]}</span>${card.elixir}⚡</div>
+            </div>
+        </div>
+        <div class="controls">
+            <div class="level-box">Nivel:
+                <button type="button" class="lvl-btn minus">−</button>
+                <input type="number" class="level-input" min="1" max="16" value="11">
+                <button type="button" class="lvl-btn plus">+</button>
+            </div>
+            <div class="toggles">
+                <label class="toggle-label"><input type="checkbox" class="owned-check"><span>Tengo</span></label>
+                <label class="toggle-label"><input type="checkbox" class="evo-check"><span>Evo</span></label>
+                <label class="toggle-label"><input type="checkbox" class="hero-check"><span>Héroe</span></label>
+            </div>
+        </div>`;
+    div.querySelector('.card-name').textContent = card.name;
+
+    // Imagen opcional desde carpeta "imagenes"
+    const img = new Image();
+    const tries = [`imagenes/${card.name}.png`, `imagenes/${card.name}.jpg`, `imagenes/${card.name}.webp`];
+    let i = 0;
+    img.onerror = () => { i++; if (i < tries.length) img.src = tries[i]; else img.remove(); };
+    img.alt = card.name;
+    img.src = tries[0];
+    div.querySelector('.avatar').appendChild(img);
+
+    container.appendChild(div);
+});
+
+applyState(readStore());
+if (Object.keys(readStore()).length) statusEl.textContent = "✔ Datos anteriores cargados";
+
+// ---------- Eventos ----------
+function clampLevel(input) {
+    let v = parseInt(input.value);
+    if (isNaN(v)) v = DEFAULT_LEVEL;
+    input.value = Math.min(16, Math.max(1, v));
+}
+function markOwned(el) {
+    el.querySelector('.owned-check').checked = true;
+    el.classList.add('owned');
+}
+
+container.addEventListener('click', e => {
+    const btn = e.target.closest('.lvl-btn');
+    if (!btn) return;
+    const el = btn.closest('.card-item');
+    const input = el.querySelector('.level-input');
+    input.value = (parseInt(input.value) || DEFAULT_LEVEL) + (btn.classList.contains('plus') ? 1 : -1);
+    clampLevel(input);
+    markOwned(el);
+    scheduleSave();
+    applyFilters();
+});
+
+container.addEventListener('input', e => {
+    const el = e.target.closest('.card-item');
+    if (!el) return;
+    if (e.target.classList.contains('owned-check')) el.classList.toggle('owned', e.target.checked);
+    if (e.target.classList.contains('level-input')) markOwned(el);
+    scheduleSave();
+    applyFilters();
+});
+container.addEventListener('change', e => {
+    if (e.target.classList.contains('level-input')) { clampLevel(e.target); scheduleSave(); }
+});
+
+function applyFilters() {
+    const q = document.getElementById('search').value.trim().toLowerCase();
+    const r = document.getElementById('rarityFilter').value;
+    const only = document.getElementById('onlyOwned').checked;
+    document.querySelectorAll('.card-item').forEach(el => {
+        const ok = (!q || el.dataset.name.toLowerCase().includes(q))
+            && (!r || el.dataset.rarity === r)
+            && (!only || el.querySelector('.owned-check').checked);
+        el.classList.toggle('hidden', !ok);
+    });
+}
+['search', 'rarityFilter', 'onlyOwned'].forEach(id => document.getElementById(id).addEventListener('input', applyFilters));
+
+// ---------- Cargar desde la API ----------
+const norm = n => n.toLowerCase().replace(/[^a-z0-9]/g, '');
+const MAX_LEVEL = 16;
+try {
+    document.getElementById('playerTag').value = localStorage.getItem('cr_tag') || '';
+    document.getElementById('apiUrl').value = localStorage.getItem('cr_api') || '/api/cartas';
+} catch (e) {}
+
+document.getElementById('loadBtn').addEventListener('click', async () => {
+    const tag = document.getElementById('playerTag').value.trim();
+    const api = document.getElementById('apiUrl').value.trim();
+    if (!tag || !api) { statusEl.textContent = "⚠ Escribe la etiqueta y la URL de la función"; return; }
+    try { localStorage.setItem('cr_tag', tag); localStorage.setItem('cr_api', api); } catch (e) {}
+    statusEl.textContent = "⏳ Cargando tu perfil...";
+    try {
+        const r = await fetch(`${api}?tag=${encodeURIComponent(tag)}`);
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Error');
+        const byName = {};
+        document.querySelectorAll('.card-item').forEach(el => byName[norm(el.dataset.name)] = el);
+        let found = 0; const missing = [];
+        d.cards.forEach(c => {
+            const el = byName[norm(c.name)];
+            if (!el) { missing.push(c.name); return; }
+            // La API cuenta el nivel desde la rareza de la carta; lo pasamos al nivel que ves en el juego
+            const level = Math.min(MAX_LEVEL, Math.max(1, MAX_LEVEL - c.maxLevel + c.level));
+            el.querySelector('.level-input').value = level;
+            el.querySelector('.owned-check').checked = true;
+            el.querySelector('.evo-check').checked = !!c.evo;
+            el.classList.add('owned');
+            found++;
+        });
+        save(); applyFilters();
+        statusEl.textContent = `✔ ${d.name}: ${found} cartas cargadas` + (missing.length ? ` (sin coincidencia: ${missing.join(', ')})` : '');
+    } catch (e) {
+        statusEl.textContent = "⚠ No se pudo cargar: " + e.message;
+    }
+});
+
+// ---------- Markdown ----------
+function generateMarkdown() {
+    const state = getState();
+    const anyOwned = Object.values(state).some(s => s.owned);
+    const rows = CARDS_DATA.filter(c => {
+        const s = state[c.name];
+        return anyOwned ? s.owned : (s.level !== DEFAULT_LEVEL || s.evo || s.hero);
+    });
+    let md = `# 📋 Mi Colección de Clash Royale\n\n`;
+    md += `> Fecha de generación: ${new Date().toLocaleDateString('es-ES')}\n\n`;
+    md += `| Carta | Rareza | Nivel | Evolución | Héroe |\n|-------|--------|-------|-----------|-------|\n`;
+    rows.forEach(c => {
+        const s = state[c.name];
+        md += `| ${c.name} | ${RARITY_ES[c.rarity]} | ${s.level} | ${s.evo ? '✅' : '❌'} | ${s.hero ? '✅' : '❌'} |\n`;
+    });
+    if (!rows.length) md += `\n> *No hay cartas marcadas todavía.*\n`;
+    md += `\n---\n\n**Instrucciones para la IA:** Analiza esta colección (${rows.length} cartas) y recomienda los 3 mazos más competitivos que pueda construir, priorizando sinergias y el nivel de las cartas.`;
+    download(md, `mi_coleccion_clash_royale_${new Date().toISOString().slice(0, 10)}.md`, 'text/markdown;charset=utf-8');
+}
+function download(text, filename, type) {
+    const url = URL.createObjectURL(new Blob([text], { type }));
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+document.getElementById('generateBtn').addEventListener('click', generateMarkdown);
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+    download(JSON.stringify(getState(), null, 2), 'clash_royale_copia.json', 'application/json');
+});
+document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        try { applyState(JSON.parse(reader.result)); save(); applyFilters(); statusEl.textContent = "✔ Copia importada"; }
+        catch (err) { statusEl.textContent = "⚠ Archivo no válido"; }
+    };
+    reader.readAsText(f);
+    e.target.value = '';
+});
+
+// Marca/desmarca «Tengo» en las cartas visibles (respeta buscador y filtro de rareza)
+function setOwnedVisible(value) {
+    document.querySelectorAll('.card-item:not(.hidden)').forEach(el => {
+        el.querySelector('.owned-check').checked = value;
+        el.classList.toggle('owned', value);
+    });
+    save(); applyFilters();
+}
+document.getElementById('markAllBtn').addEventListener('click', () => setOwnedVisible(true));
+document.getElementById('unmarkAllBtn').addEventListener('click', () => setOwnedVisible(false));
+
+document.getElementById('selectAllMaxBtn').addEventListener('click', () => {
+    document.querySelectorAll('.card-item').forEach(el => {
+        el.querySelector('.level-input').value = 16;
+        el.querySelector('.owned-check').checked = true;
+        el.classList.add('owned');
+    });
+    save(); applyFilters();
+});
+document.getElementById('clearBtn').addEventListener('click', () => {
+    if (!confirm('¿Borrar todos los datos guardados?')) return;
+    document.querySelectorAll('.card-item').forEach(el => {
+        el.querySelector('.level-input').value = DEFAULT_LEVEL;
+        el.querySelector('.evo-check').checked = false;
+        el.querySelector('.hero-check').checked = false;
+        el.querySelector('.owned-check').checked = false;
+        el.classList.remove('owned');
+    });
+    save(); applyFilters();
+});
+</script>
+</body>
+</html>
